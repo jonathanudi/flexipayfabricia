@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlexiBank — Gerador de Proposta Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --magenta:#91278F;
+  --magenta-hover:#7b1f79;
+  --magenta-light:rgba(145,39,143,.08);
+  --accent-pink:#ED1369;
+  --dark:#100127;
+  --dark-soft:#2a1240;
+  --white:#ffffff;
+  --ice:#f8f6fa;
+  --gray-100:#f1f0f2;
+  --gray-200:#e2e0e4;
+  --gray-400:#b7b7b7;
+  --gray-600:#797a7a;
+  --gray-800:#3a2450;
+  --grad:linear-gradient(120deg, var(--dark) 0%, #4a1a63 45%, var(--magenta) 100%);
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:24px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+
+body{
+  font-family:'Nunito Sans', sans-serif;
+  color:var(--gray-800);
+  background:var(--ice);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+h1,h2,h3,h4{ color:var(--dark); letter-spacing:-.01em; line-height:1.2; font-weight:800; }
+button{ font-family:inherit; cursor:pointer; }
+input, textarea, select{ font-family:inherit; }
+
+/* ===== Tela de preenchimento ===== */
+.app-top{
+  display:flex; align-items:center; gap:14px;
+  padding:20px 32px; background:var(--white); border-bottom:1px solid var(--gray-200);
+}
+.app-top img{ height:34px; width:auto; }
+.app-top .app-title{ font-size:1.1rem; font-weight:800; color:var(--dark); }
+.app-top .app-sub{ font-size:.82rem; color:var(--gray-600); font-weight:600; }
+
+.app-body{ max-width:840px; margin:0 auto; padding:40px 32px 90px; }
+
+.form-section{
+  background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-md);
+  padding:28px 30px; margin-bottom:22px;
+}
+.form-section-head{ display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.form-num{
+  width:28px; height:28px; border-radius:50%; background:var(--magenta); color:var(--white);
+  display:flex; align-items:center; justify-content:center; font-size:.82rem; font-weight:800; flex-shrink:0;
+}
+.form-section-head h2{ font-size:1.05rem; }
+.form-section-head p{ font-size:.85rem; color:var(--gray-600); font-weight:600; margin-top:2px; }
+
+.field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field.full{ grid-column:1 / -1; }
+.field label{ font-size:.82rem; font-weight:700; color:var(--gray-600); }
+.field .hint{ font-size:.74rem; color:var(--gray-400); font-weight:600; }
+.field input, .field select{
+  border:1.5px solid var(--gray-200); border-radius:10px; padding:10px 12px; font-size:.94rem;
+  color:var(--dark); background:var(--white); transition:border-color .2s ease;
+}
+.field input:focus, .field select:focus{ outline:none; border-color:var(--magenta); }
+.currency-wrap{ position:relative; }
+.currency-wrap span{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:.9rem; color:var(--gray-600); font-weight:700; }
+.currency-wrap input{ padding-left:32px; }
+
+.generate-bar{
+  position:sticky; bottom:0; background:var(--white); border-top:1px solid var(--gray-200);
+  padding:18px 32px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+.btn-generate{
+  padding:14px 30px; border-radius:100px; border:none; background:var(--magenta); color:var(--white);
+  font-weight:800; font-size:.95rem; cursor:pointer; box-shadow:0 10px 24px rgba(145,39,143,.28);
+  transition:all .2s ease; display:flex; align-items:center; gap:8px;
+}
+.btn-generate:hover{ background:var(--magenta-hover); transform:translateY(-1px); }
+.btn-generate:disabled{ background:var(--gray-200); color:var(--gray-600); cursor:not-allowed; box-shadow:none; transform:none; }
+.btn-copy-text{
+  padding:12px 20px; border-radius:100px; border:2px solid var(--gray-200); background:var(--white); color:var(--dark);
+  font-weight:800; font-size:.85rem; transition:all .2s ease;
+}
+.btn-copy-text:hover{ border-color:var(--magenta); color:var(--magenta); }
+.gen-feedback{ font-size:.82rem; color:var(--magenta); font-weight:700; }
+
+@media(max-width:720px){
+  .field-grid{ grid-template-columns:1fr; }
+  .app-top{ padding:16px 20px; }
+  .app-body{ padding:28px 18px 90px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="app-top">
+  <img src="data:image/png;base64,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" alt="FlexiBank">
+  <div>
+    <div class="app-title">Gerador de Proposta Comercial</div>
+    <div class="app-sub">Preencha os dados da escola e gere o PDF da proposta</div>
+  </div>
+</div>
+
+<div class="app-body">
+
+  <div class="form-section">
+    <div class="form-section-head">
+      <div class="form-num">1</div>
+      <div>
+        <h2>Perfil do consultor</h2>
+        <p>Aparece no topo da proposta enviada à escola</p>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label for="consultName">Nome</label><input type="text" id="consultName" value="Fabricia de Conto"></div>
+      <div class="field"><label for="consultPhone">Telefone</label><input type="text" id="consultPhone" value="(34) 99306-3539"></div>
+      <div class="field full"><label for="consultEmail">E-mail</label><input type="text" id="consultEmail" value="Fabricia.conto@flexibank.com.br"></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-head">
+      <div class="form-num">2</div>
+      <div>
+        <h2>Dados da escola</h2>
+        <p>Informações levantadas na reunião com o cliente</p>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field full"><label for="nomeEscola">Nome da escola</label><input type="text" id="nomeEscola" placeholder="Ex.: Colégio Cantinho Luminoso"></div>
+      <div class="field"><label for="numAlunos">Quantidade de alunos</label><input type="text" id="numAlunos" placeholder="Ex.: 180"></div>
+      <div class="field">
+        <label for="ticketMedio">Valor médio da mensalidade</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="ticketMedio" placeholder="0,00"></div>
+      </div>
+      <div class="field full">
+        <label for="faturamentoMedio">Faturamento médio mensal</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="faturamentoMedio" placeholder="0,00"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-head">
+      <div class="form-num">3</div>
+      <div>
+        <h2>Condições comerciais da proposta</h2>
+        <p>Deixe 0,00 nos campos de valor para indicar isenção. A antecipação até 2,99% é fixa</p>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label for="precoBoleto">Preço de boleto</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="precoBoleto" class="currency-mask" value="0,00"></div>
+        <span class="hint">Deixe 0,00 para isento</span>
+      </div>
+      <div class="field">
+        <label for="precoPix">Preço de Pix</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="precoPix" class="currency-mask" value="0,00"></div>
+        <span class="hint">Deixe 0,00 para isento</span>
+      </div>
+      <div class="field">
+        <label for="sistemaGestao">Sistema de gestão</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="sistemaGestao" class="currency-mask" value="0,00"></div>
+        <span class="hint">Deixe 0,00 para isento</span>
+      </div>
+      <div class="field">
+        <label for="percentualGestao">Gestão completa de mensalidades</label>
+        <div class="currency-wrap"><input type="text" id="percentualGestao" placeholder="Ex.: 2,30" style="padding-left:12px; padding-right:28px;"><span style="left:auto; right:12px;">%</span></div>
+        <span class="hint">Sobre o volume financeiro transacionado</span>
+      </div>
+      <div class="field">
+        <label for="valorMinimo">Valor mínimo mensal</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="valorMinimo" class="currency-mask" placeholder="0,00"></div>
+      </div>
+      <div class="field">
+        <label for="taxaImplantacao">Taxa de implantação</label>
+        <div class="currency-wrap"><span>R$</span><input type="text" id="taxaImplantacao" class="currency-mask" placeholder="0,00"></div>
+        <span class="hint">Valor único, pode ser parcelado. Deixe 0,00 para isento</span>
+      </div>
+      <div class="field">
+        <label for="mesInicio">Mês de início da operação</label>
+        <select id="mesInicio">
+          <option value="">Selecionar</option>
+          <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
+          <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
+          <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+        </select>
+      </div>
+      <div class="field"><label for="anoInicio">Ano de início</label><input type="text" id="anoInicio" placeholder="2026"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="generate-bar">
+  <button class="btn-copy-text" id="copyBtn">Copiar resumo em texto</button>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <span class="gen-feedback" id="genFeedback"></span>
+    <button class="btn-generate" id="generateBtn">Gerar PDF da proposta</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function fmtCurrency(value){
+  const trimmed = (value || '').trim();
+  if(!trimmed) return '';
+  return 'R$ ' + trimmed;
+}
+
+function isZeroValue(value){
+  const trimmed = (value || '').trim();
+  if(!trimmed) return false;
+  const num = parseFloat(trimmed.replace(/\./g, '').replace(',', '.'));
+  return !isNaN(num) && num === 0;
+}
+
+function fmtCurrencyIsento(value){
+  if(!value) return '—';
+  const formatted = fmtCurrency(value);
+  return isZeroValue(value) ? (formatted + ' (Isento)') : formatted;
+}
+
+function applyCurrencyMask(el){
+  el.addEventListener('input', () => {
+    let digits = el.value.replace(/\D/g, '');
+    if(!digits){ el.value = ''; return; }
+    digits = digits.replace(/^0+(?=\d)/, '');
+    while(digits.length < 3) digits = '0' + digits;
+    const cents = digits.slice(-2);
+    let intPart = digits.slice(0, -2);
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    el.value = intPart + ',' + cents;
+  });
+}
+
+document.querySelectorAll('.currency-mask').forEach(applyCurrencyMask);
+
+function getFormData(){
+  return {
+    consultName: document.getElementById('consultName').value.trim() || 'Não informado',
+    consultPhone: document.getElementById('consultPhone').value.trim(),
+    consultEmail: document.getElementById('consultEmail').value.trim(),
+    nomeEscola: document.getElementById('nomeEscola').value.trim() || 'Escola não informada',
+    numAlunos: document.getElementById('numAlunos').value.trim(),
+    ticketMedio: document.getElementById('ticketMedio').value.trim(),
+    faturamentoMedio: document.getElementById('faturamentoMedio').value.trim(),
+    precoBoleto: document.getElementById('precoBoleto').value.trim(),
+    precoPix: document.getElementById('precoPix').value.trim(),
+    sistemaGestao: document.getElementById('sistemaGestao').value.trim(),
+    percentualGestao: document.getElementById('percentualGestao').value.trim(),
+    valorMinimo: document.getElementById('valorMinimo').value.trim(),
+    taxaImplantacao: document.getElementById('taxaImplantacao').value.trim(),
+    mesInicio: document.getElementById('mesInicio').value,
+    anoInicio: document.getElementById('anoInicio').value.trim()
+  };
+}
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const d = getFormData();
+  let text = 'Proposta comercial FlexiBank\n';
+  text += 'Consultor: ' + d.consultName + ' | ' + d.consultPhone + ' | ' + d.consultEmail + '\n\n';
+  text += 'Escola: ' + d.nomeEscola + '\n';
+  text += 'Alunos: ' + (d.numAlunos || '-') + '\n';
+  text += 'Mensalidade média: ' + (d.ticketMedio ? fmtCurrency(d.ticketMedio) : '-') + '\n';
+  text += 'Faturamento médio: ' + (d.faturamentoMedio ? fmtCurrency(d.faturamentoMedio) : '-') + '\n\n';
+  text += 'Preço de boleto: ' + fmtCurrencyIsento(d.precoBoleto) + '\n';
+  text += 'Preço de Pix: ' + fmtCurrencyIsento(d.precoPix) + '\n';
+  text += 'Sistema de gestão: ' + fmtCurrencyIsento(d.sistemaGestao) + '\n';
+  text += 'Gestão completa: ' + (d.percentualGestao ? d.percentualGestao + '%' : '-')
+    + (d.valorMinimo ? (' (mínimo mensal ' + fmtCurrency(d.valorMinimo) + ')') : '') + '\n';
+  text += 'Antecipação: até 2,99%\n';
+  text += 'Taxa de implantação: ' + (d.taxaImplantacao
+    ? (isZeroValue(d.taxaImplantacao) ? (fmtCurrency(d.taxaImplantacao) + ' (Isento)') : (fmtCurrency(d.taxaImplantacao) + ' (valor único, pode ser parcelado)'))
+    : '-') + '\n';
+  text += 'Início: ' + ([d.mesInicio, d.anoInicio].filter(Boolean).join(' de ') || '-') + '\n';
+
+  const feedback = document.getElementById('genFeedback');
+  try{
+    await navigator.clipboard.writeText(text);
+    feedback.textContent = 'Resumo copiado para a área de transferência.';
+  } catch(err){
+    feedback.textContent = 'Não foi possível copiar automaticamente.';
+  }
+});
+
+function drawFeatureIcon(doc, type, x, y, size, magenta){
+  doc.setDrawColor(...magenta);
+  doc.setFillColor(...magenta);
+  doc.setLineWidth(0.5);
+  const cx = x + size / 2;
+  const cy = y + size / 2;
+
+  if(type === 'doc'){
+    doc.line(x + size*0.22, y + size*0.32, x + size*0.78, y + size*0.32);
+    doc.line(x + size*0.22, y + size*0.5, x + size*0.78, y + size*0.5);
+    doc.line(x + size*0.22, y + size*0.68, x + size*0.55, y + size*0.68);
+  } else if(type === 'sliders'){
+    doc.line(x + size*0.15, y + size*0.28, x + size*0.85, y + size*0.28);
+    doc.circle(x + size*0.35, y + size*0.28, size*0.07, 'F');
+    doc.line(x + size*0.15, y + size*0.5, x + size*0.85, y + size*0.5);
+    doc.circle(x + size*0.65, y + size*0.5, size*0.07, 'F');
+    doc.line(x + size*0.15, y + size*0.72, x + size*0.85, y + size*0.72);
+    doc.circle(x + size*0.48, y + size*0.72, size*0.07, 'F');
+  } else if(type === 'check'){
+    doc.setLineWidth(0.7);
+    doc.line(x + size*0.22, y + size*0.5, x + size*0.42, y + size*0.7);
+    doc.line(x + size*0.42, y + size*0.7, x + size*0.78, y + size*0.3);
+  } else if(type === 'grid'){
+    doc.rect(x + size*0.18, y + size*0.18, size*0.28, size*0.28, 'S');
+    doc.rect(x + size*0.54, y + size*0.18, size*0.28, size*0.28, 'S');
+    doc.rect(x + size*0.18, y + size*0.54, size*0.28, size*0.28, 'S');
+    doc.rect(x + size*0.54, y + size*0.54, size*0.28, size*0.28, 'S');
+  } else if(type === 'chat'){
+    doc.roundedRect(x + size*0.15, y + size*0.2, size*0.7, size*0.48, 1.2, 1.2, 'S');
+    doc.triangle(x + size*0.32, y + size*0.66, x + size*0.46, y + size*0.66, x + size*0.32, y + size*0.82, 'S');
+  }
+}
+
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('generateBtn');
+  const feedback = document.getElementById('genFeedback');
+
+  if(!window.jspdf){
+    feedback.textContent = 'Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.';
+    return;
+  }
+
+  const data = getFormData();
+  btn.disabled = true;
+  btn.textContent = 'Gerando PDF...';
+  feedback.textContent = '';
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 18;
+    const contentWidth = pageWidth - marginX * 2;
+    let y = 0;
+
+    const dark = [16, 1, 39];
+    const magenta = [145, 39, 143];
+    const magentaLight = [247, 238, 247];
+    const gray = [90, 90, 95];
+    const lightGray = [226, 224, 228];
+    const white = [255, 255, 255];
+
+    function checkPageBreak(extra){
+      if(y + extra > pageHeight - 22){
+        doc.addPage();
+        y = 20;
+      }
+    }
+
+    function sectionTitle(title){
+      checkPageBreak(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11.5);
+      doc.setTextColor(...magenta);
+      doc.text(title, marginX, y);
+      y += 2;
+      doc.setDrawColor(...lightGray);
+      doc.line(marginX, y, pageWidth - marginX, y);
+      y += 6;
+    }
+
+    /* Cabeçalho */
+    doc.setFillColor(...dark);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    const logoSrc = document.querySelector('.app-top img').getAttribute('src');
+    try{ doc.addImage(logoSrc, 'PNG', marginX, 6, 17, 17); } catch(e){}
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Proposta comercial', marginX + 24, 15);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.text('Gestão de mensalidades e antecipação sob medida', marginX + 24, 21.5);
+    y = 42;
+
+    const today = new Date().toLocaleDateString('pt-BR');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...dark);
+    doc.text(data.nomeEscola, marginX, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...gray);
+    doc.text('Data: ' + today, marginX, y);
+    y += 12;
+
+    /* Perfil do consultor */
+    sectionTitle('Perfil do consultor');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...dark);
+    doc.text(data.consultName, marginX, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...gray);
+    const consultLines = [
+      data.consultPhone ? ('Telefone: ' + data.consultPhone) : '',
+      data.consultEmail ? ('E-mail: ' + data.consultEmail) : ''
+    ].filter(Boolean);
+    consultLines.forEach(line => { doc.text(line, marginX, y); y += 5; });
+    y += 6;
+
+    /* Sobre a FlexiBank */
+    sectionTitle('Sobre a FlexiBank');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...dark);
+    const headlineLines = doc.splitTextToSize(
+      'A parceira estratégica de gestão financeira e previsibilidade de caixa para instituições de ensino',
+      contentWidth
+    );
+    doc.text(headlineLines, marginX, y);
+    y += headlineLines.length * 5 + 3;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...gray);
+    const subLines = doc.splitTextToSize(
+      'Há 23 anos no mercado educacional, a FlexiBank assume a emissão, o acompanhamento e a cobrança das mensalidades das escolas parceiras e oferece antecipação de receita sob medida, de forma fixa, mensal, ou esporádica, para necessidades específicas.',
+      contentWidth
+    );
+    doc.text(subLines, marginX, y);
+    y += subLines.length * 5 + 6;
+
+    checkPageBreak(16);
+    const statLabels = ['23 anos de mercado', 'Brasil todo', 'Centenas de escolas atendidas'];
+    const statWidth = contentWidth / statLabels.length;
+    doc.setFillColor(...dark);
+    doc.roundedRect(marginX, y, contentWidth, 14, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.3);
+    doc.setTextColor(255, 255, 255);
+    statLabels.forEach((label, i) => {
+      const cx = marginX + statWidth * i + statWidth / 2;
+      doc.text(label, cx, y + 8.5, { align: 'center', maxWidth: statWidth - 6 });
+    });
+    y += 22;
+
+    /* Como funciona */
+    sectionTitle('Como funciona');
+    const features = [
+      ['doc', 'Gestão integrada', 'Emissão e envio de boletos por WhatsApp, e-mail, DDA ou App, acompanhamento e cobrança humanizada das mensalidades.'],
+      ['sliders', 'Condições ajustadas', 'Antecipação de mensalidades, de forma fixa ou variável, de acordo com a necessidade do cliente.'],
+      ['check', 'Folha garantida', 'Pagamento da folha salarial da equipe escolar, na data acordada, sem depender das mensalidades.'],
+      ['grid', 'Sistema de gestão', 'Para cadastro de clientes e matrículas, facilita o acompanhamento dos pagamentos e da inadimplência, trazendo mais controle e transparência.'],
+      ['chat', 'WhatsApp e aplicativo', 'Além de receber os boletos mensalmente, alunos e responsáveis têm acesso ao aplicativo FlexiBank para consultar, baixar boletos e acompanhar o histórico de pagamentos.']
+    ];
+
+    const iconSize = 9;
+    features.forEach(([icon, title, desc]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const descLines = doc.splitTextToSize(desc, contentWidth - iconSize - 6);
+      const blockHeight = 7 + descLines.length * 4.6 + 6;
+      checkPageBreak(blockHeight);
+
+      doc.setFillColor(...magentaLight);
+      doc.roundedRect(marginX, y, iconSize, iconSize, 2, 2, 'F');
+      drawFeatureIcon(doc, icon, marginX, y, iconSize, magenta);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...dark);
+      doc.text(title, marginX + iconSize + 6, y + 4);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text(descLines, marginX + iconSize + 6, y + 9.5);
+
+      y += blockHeight;
+    });
+    y += 4;
+
+    /* Proposta exclusiva */
+    sectionTitle('Proposta exclusiva');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(...dark);
+    const exclusiveLines = doc.splitTextToSize('Proposta exclusiva para ' + data.nomeEscola, contentWidth);
+    doc.text(exclusiveLines, marginX, y);
+    y += exclusiveLines.length * 5.5 + 6;
+
+    checkPageBreak(40);
+    const highlightItems = [
+      ['Quantidade de alunos', data.numAlunos || '—'],
+      ['Valor médio da mensalidade', data.ticketMedio ? fmtCurrency(data.ticketMedio) : '—'],
+      ['Faturamento médio mensal', data.faturamentoMedio ? fmtCurrency(data.faturamentoMedio) : '—']
+    ];
+    const highlightBoxHeight = highlightItems.length * 10 + 10;
+    doc.setFillColor(...magentaLight);
+    doc.roundedRect(marginX, y, contentWidth, highlightBoxHeight, 3, 3, 'F');
+    let rowY = y + 11;
+    highlightItems.forEach((item, i) => {
+      const circleY = rowY - 1.3;
+      doc.setFillColor(...magenta);
+      doc.circle(marginX + 10, circleY, 3.3, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(i + 1), marginX + 10, circleY + 1.1, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...dark);
+      doc.text(item[0], marginX + 18, rowY);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...dark);
+      doc.text(item[1], pageWidth - marginX - 4, rowY, { align: 'right' });
+
+      rowY += 10;
+    });
+    y += highlightBoxHeight + 10;
+
+    /* Condições comerciais */
+    sectionTitle('Condições comerciais');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...dark);
+    doc.text('O que sua escola paga', marginX, y);
+    y += 8;
+
+    function wrapMultiline(text, maxWidth){
+      let lines = [];
+      String(text).split('\n').forEach(part => {
+        lines = lines.concat(doc.splitTextToSize(part, maxWidth));
+      });
+      return lines;
+    }
+
+    let gestaoText = '—';
+    if(data.percentualGestao){
+      gestaoText = data.percentualGestao + '% sobre o volume financeiro transacionado';
+      if(data.valorMinimo){
+        gestaoText += '\n(valor mínimo mensal: ' + fmtCurrency(data.valorMinimo) + ')';
+      }
+    }
+
+    let taxaText = '—';
+    if(data.taxaImplantacao){
+      taxaText = isZeroValue(data.taxaImplantacao)
+        ? (fmtCurrency(data.taxaImplantacao) + ' (Isento)')
+        : (fmtCurrency(data.taxaImplantacao) + '\n(Valor único, pode ser parcelado)');
+    }
+
+    const inicio = [data.mesInicio, data.anoInicio].filter(Boolean).join(' de ');
+
+    const termRows = [
+      ['Preço de boleto', fmtCurrencyIsento(data.precoBoleto)],
+      ['Preço de Pix', fmtCurrencyIsento(data.precoPix)],
+      ['Sistema de gestão', fmtCurrencyIsento(data.sistemaGestao)],
+      ['Gestão completa de mensalidades com cobrança', gestaoText],
+      ['Antecipação', 'até 2,99%'],
+      ['Taxa de implantação', taxaText],
+      ['Início da operação', inicio ? ('Títulos com vencimento a partir de ' + inicio) : '—']
+    ];
+
+    termRows.forEach(([label, value]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const labelLines = wrapMultiline(label, contentWidth * 0.46);
+      const valueLines = wrapMultiline(value, contentWidth * 0.46);
+      const rowHeight = Math.max(labelLines.length, valueLines.length) * 4.6 + 7;
+      checkPageBreak(rowHeight);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text(labelLines, marginX, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...dark);
+      doc.text(valueLines, pageWidth - marginX, y + 5, { align: 'right' });
+
+      y += rowHeight;
+      doc.setDrawColor(...lightGray);
+      doc.line(marginX, y - 2, pageWidth - marginX, y - 2);
+    });
+    y += 8;
+
+    /* Frase de encerramento com link e botão de WhatsApp */
+    function buildWhatsAppUrl(phone){
+      let digits = (phone || '').replace(/\D/g, '');
+      if(!digits) return null;
+      if(!digits.startsWith('55')) digits = '55' + digits;
+      return 'https://wa.me/' + digits;
+    }
+    const whatsAppUrl = buildWhatsAppUrl(data.consultPhone);
+
+    const closingPhrase = 'Mais do que uma solução financeira, a FlexiBank é parceira da sua escola no dia a dia. Estamos à disposição para dar o próximo passo: é só chamar no WhatsApp. Vamos estruturar juntos o melhor caminho para começar.';
+    const cardPadding = 10;
+    const cardTextWidth = contentWidth - cardPadding * 2;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.3);
+    const closingLines = doc.splitTextToSize(closingPhrase, cardTextWidth);
+    const lineHeight = 4.8;
+    const buttonHeight = 9;
+    const cardHeight = cardPadding + closingLines.length * lineHeight + 6 + buttonHeight + cardPadding;
+
+    checkPageBreak(cardHeight + 6);
+
+    doc.setFillColor(...dark);
+    doc.roundedRect(marginX, y, contentWidth, cardHeight, 4, 4, 'F');
+
+    const textStartY = y + cardPadding + 3;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.3);
+    doc.setTextColor(255, 255, 255);
+    closingLines.forEach((line, i) => {
+      doc.text(line, marginX + cardPadding, textStartY + i * lineHeight);
+    });
+
+    const whatsIndex = closingLines.findIndex(line => line.includes('WhatsApp'));
+    if(whatsIndex !== -1){
+      const line = closingLines[whatsIndex];
+      const wordStart = line.indexOf('WhatsApp');
+      const prefix = line.substring(0, wordStart);
+      const prefixWidth = doc.getTextWidth(prefix);
+      const wordWidth = doc.getTextWidth('WhatsApp');
+      const linkX = marginX + cardPadding + prefixWidth;
+      const linkBaselineY = textStartY + whatsIndex * lineHeight;
+
+      doc.setTextColor(237, 19, 105);
+      doc.text('WhatsApp', linkX, linkBaselineY);
+      doc.setDrawColor(237, 19, 105);
+      doc.setLineWidth(0.3);
+      doc.line(linkX, linkBaselineY + 0.8, linkX + wordWidth, linkBaselineY + 0.8);
+
+      if(whatsAppUrl){
+        doc.link(linkX, linkBaselineY - 3.2, wordWidth, 4.2, { url: whatsAppUrl });
+      }
+    }
+
+    const buttonLabel = 'Falar no WhatsApp';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    const buttonTextWidth = doc.getTextWidth(buttonLabel);
+    const buttonWidth = buttonTextWidth + 16;
+    const buttonX = marginX + (contentWidth - buttonWidth) / 2;
+    const buttonY = textStartY + closingLines.length * lineHeight + 4;
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(buttonX, buttonY, buttonWidth, buttonHeight, buttonHeight / 2, buttonHeight / 2, 'F');
+    doc.setTextColor(...magenta);
+    doc.text(buttonLabel, buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 1.4, { align: 'center' });
+
+    if(whatsAppUrl){
+      doc.link(buttonX, buttonY, buttonWidth, buttonHeight, { url: whatsAppUrl });
+    }
+
+    y += cardHeight + 12;
+
+    /* Rodapé em todas as páginas */
+    const footerLine = 'Site: www.flexibank.com.br   |   Instagram: @flexi.bank'
+      + (data.consultPhone ? ('   |   WhatsApp: ' + data.consultPhone) : '');
+    const totalPages = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= totalPages; i++){
+      doc.setPage(i);
+      doc.setDrawColor(...lightGray);
+      doc.line(marginX, pageHeight - 15, pageWidth - marginX, pageHeight - 15);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.6);
+      doc.setTextColor(...gray);
+      doc.text(footerLine, marginX, pageHeight - 9);
+      doc.text(String(i) + ' / ' + totalPages, pageWidth - marginX, pageHeight - 9, { align: 'right' });
+    }
+
+    const fileSchool = data.nomeEscola.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'escola';
+    doc.save('flexibank-proposta-' + fileSchool + '.pdf');
+    feedback.textContent = 'PDF gerado. Confira a pasta de downloads do navegador.';
+  } catch(err){
+    feedback.textContent = 'Não foi possível gerar o PDF. Tente novamente.';
+  } finally{
+    btn.disabled = false;
+    btn.textContent = 'Gerar PDF da proposta';
+  }
+});
+</script>
+
+</body>
+</html>
